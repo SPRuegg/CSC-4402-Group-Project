@@ -1,4 +1,5 @@
 import sqlite3
+from contextlib import contextmanager
 from pathlib import Path
 
 from flask import current_app, g
@@ -24,6 +25,20 @@ def close_db(error=None):
     connection = g.pop("db", None)
     if connection is not None:
         connection.close()
+
+
+@contextmanager
+def transaction():
+    connection = get_db()
+    if connection.in_transaction:
+        raise RuntimeError("A database transaction is already active")
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        yield connection
+        connection.commit()
+    except BaseException:
+        connection.rollback()
+        raise
 
 
 def init_app(app):
