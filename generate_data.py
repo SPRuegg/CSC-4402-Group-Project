@@ -5,18 +5,23 @@ Generate synthetic data for the car rental database.
 Usage:
     pip install faker
     python generate_data.py                      # builds instance/car_rental.sqlite3 from sql/schema.sql
+    python generate_data.py --overwrite          # rebuild it if it already exists
     python generate_data.py --db test.sqlite3 --seed 7
 
-The database is rebuilt from schema.sql on every run, and the random seed is fixed,
-so every team member (and the grader) gets exactly the same data.
+An existing database is never touched unless --overwrite is given. The new database is
+built in a temporary file, checked against the columns this script needs, and only then
+moved into place, so a bad schema or failed insert leaves the old database intact.
+The random seed is fixed, so every team member (and the grader) gets exactly the same data.
 
 How the data is kept realistic:
   * Each vehicle gets its own timeline of rentals and maintenance jobs, generated
     back to back, so a car is never double-booked or rented while in the shop.
   * Rental status follows from the dates relative to a fixed "today" (NOW):
     future -> reserved/cancelled, ongoing or overdue -> active, past -> completed.
-  * Payments only exist for active (deposit) and completed rentals, and add up to
-    (days rented x agreed daily rate).
+  * Payments only exist for active (deposit) and completed rentals. A completed rental
+    is paid for the agreed term even if returned early (billed until the later of
+    due_at and returned_at), at the agreed daily rate.
+  * A few new vehicles and some customers have no rentals at all (0..* participation).
   * Odometer readings grow with every completed rental.
 """
 
@@ -39,6 +44,7 @@ FMT = "%Y-%m-%d %H:%M:%S"
 
 NUM_CUSTOMERS = 120
 NUM_VEHICLES = 30
+NUM_UNRENTED_VEHICLES = 3      # new fleet additions with no rental history yet
 
 # (category_name, standard_daily_rate_cents)
 CATEGORIES = [
@@ -182,27 +188,34 @@ def build_timeline(standard_rate):
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
-def main():
-    here = os.path.dirname(os.path.abspath(__file__))
-    ap = argparse.ArgumentParser(description="Build and populate the car rental database.")
-    # Same location the Flask app uses (app.py): $DATABASE_PATH, else instance/car_rental.sqlite3
-    default_db = os.environ.get("DATABASE_PATH", os.path.join(here, "instance", "car_rental.sqlite3"))
-    ap.add_argument("--db", default=default_db, help="output database file")
-    ap.add_argument("--schema", default=os.path.join(here, "sql", "schema.sql"), help="schema file to load")
-    ap.add_argument("--seed", type=int, default=42, help="random seed (same seed = same data)")
-    args = ap.parse_args()
+# Columns the generator inserts into; the schema must provide at least these.
+EXPECTED_COLUMNS = {
+    "customer":         {"customer_id", "full_name", "email", "phone", "driver_license_no"},
+    "vehicle_category": {"category_id", "category_name", "standard_daily_rate_cents"},
+    "vehicle":          {"vehicle_id", "category_id", "vin", "registration_no", "make", "model",
+                         "model_year", "odometer_km"},
+    "rental":           {"rental_id", "customer_id", "vehicle_id", "pickup_at", "due_at",
+                         "returned_at", "agreed_daily_rate_cents", "status"},
+    "payment":          {"payment_id", "rental_id", "amount_cents", "paid_at", "method"},
+    "maintenance":      {"maintenance_id", "vehicle_id", "service_type", "started_at",
+                         "completed_at", "cost_cents"},
+}
 
-    random.seed(args.seed)
-    Faker.seed(args.seed)
-    fake = Faker("en_US")
 
-    os.makedirs(os.path.dirname(os.path.abspath(args.db)), exist_ok=True)
-    if os.path.exists(args.db):
-        os.remove(args.db)
-    conn = sqlite3.connect(args.db)
-    conn.execute("PRAGMA foreign_keys = ON")
-    with open(args.schema, encoding="utf-8") as f:
-        conn.executescript(f.read())
+def check_schema(conn):
+    """Make sure the loaded schema has every table and column the generator needs."""
+    problems = []
+    for table, needed in EXPECTED_COLUMNS.items():
+        cols = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+        if not cols:
+            problems.append(f"missing table '{table}'")
+        elif needed - cols:
+            problems.append(f"table '{table}' is missing columns: {', '.join(sorted(needed - cols))}")
+    if problems:
+        raise SystemExit("Schema check failed (database left unchanged):\n  " + "\n  ".join(problems))
+
+
+def populate(conn, fake):
     cur = conn.cursor()
 
     # 1. vehicle_category ----------------------------------------------------
@@ -235,16 +248,30 @@ def main():
     # 3. vehicle (+ build each vehicle's rental/maintenance timeline) ---------
     # Spread the fleet: more economy/compact/midsize cars than luxury ones
     fleet_mix = random.choices(range(1, len(CATEGORIES) + 1), weights=[6, 7, 7, 6, 3], k=NUM_VEHICLES)
+    # A few brand-new fleet additions have never been rented (0..* participation)
+    unrented = set(random.sample(range(1, NUM_VEHICLES + 1), NUM_UNRENTED_VEHICLES))
     used_vins, used_plates = set(), set()
     all_rentals, all_jobs = [], []
 
     for vid, cat_id in enumerate(fleet_mix, start=1):
         cat_name, std_rate = CATEGORIES[cat_id - 1]
         make, model = random.choice(MODELS[cat_name])
-        year = random.randint(2019, 2026)
-        start_km = max(0, (2025 - year)) * random.randint(12000, 22000) + random.randint(50, 3000)
 
-        rentals, jobs, km = build_timeline(std_rate)
+        if vid in unrented:
+            year = 2026
+            start_km = random.randint(15, 400)
+            # only an intake inspection so far
+            started = business_hour(NOW - timedelta(days=random.randint(5, 20)))
+            lo_cost, hi_cost, _, _ = SERVICES["State inspection"]
+            rentals, km = [], 0
+            jobs = [dict(service_type="State inspection", started_at=started,
+                         completed_at=started + timedelta(hours=2),
+                         cost_cents=random.randint(lo_cost, hi_cost) // 100 * 100)]
+        else:
+            year = random.randint(2019, 2026)
+            start_km = max(0, (2025 - year)) * random.randint(12000, 22000) + random.randint(50, 3000)
+            rentals, jobs, km = build_timeline(std_rate)
+
         cur.execute(
             "INSERT INTO vehicle (vehicle_id, category_id, vin, registration_no, make, model, "
             "model_year, odometer_km) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -273,7 +300,10 @@ def main():
         method = random.choice(PAYMENT_METHODS)
         rate = r["agreed_daily_rate_cents"]
         if r["status"] == "completed":
-            total = days_charged(r["pickup_at"], r["returned_at"]) * rate
+            # Business rule: the customer pays for the agreed term even if they
+            # return early, and for the extra days if they return late.
+            billed_until = max(r["due_at"], r["returned_at"])
+            total = days_charged(r["pickup_at"], billed_until) * rate
             if random.random() < 0.35:   # deposit at pickup + balance at return
                 deposit = max(100, int(total * 0.3) // 100 * 100)
                 payments.append((rid, deposit, ts(r["pickup_at"]), method))
@@ -299,19 +329,72 @@ def main():
 
     conn.commit()
 
-    # Sanity checks ---------------------------------------------------------------
     problems = conn.execute("PRAGMA foreign_key_check").fetchall()
     if problems:
         raise SystemExit(f"Foreign key violations: {problems}")
 
-    print(f"Created {args.db} (seed={args.seed}, today={ts(NOW)})")
-    for table in ["vehicle_category", "customer", "vehicle", "rental", "payment", "maintenance"]:
-        n = conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+def main():
+    here = os.path.dirname(os.path.abspath(__file__))
+    ap = argparse.ArgumentParser(description="Build and populate the car rental database.")
+    # Same location the Flask app uses (app.py): $DATABASE_PATH, else instance/car_rental.sqlite3
+    default_db = os.environ.get("DATABASE_PATH", os.path.join(here, "instance", "car_rental.sqlite3"))
+    ap.add_argument("--db", default=default_db, help="output database file")
+    ap.add_argument("--schema", default=os.path.join(here, "sql", "schema.sql"), help="schema file to load")
+    ap.add_argument("--seed", type=int, default=42, help="random seed (same seed = same data)")
+    ap.add_argument("--overwrite", action="store_true",
+                    help="replace the database if it already exists (otherwise the script refuses)")
+    args = ap.parse_args()
+
+    target = os.path.abspath(args.db)
+    if os.path.exists(target) and not args.overwrite:
+        raise SystemExit(f"{target} already exists.\n"
+                         f"Re-run with --overwrite to replace it with freshly generated data.")
+    if not os.path.isfile(args.schema):
+        raise SystemExit(f"Schema file not found: {args.schema}")
+
+    random.seed(args.seed)
+    Faker.seed(args.seed)
+    fake = Faker("en_US")
+
+    # Build everything in a temporary file first. The existing database is only
+    # replaced after the schema check, all inserts and the FK check succeed.
+    os.makedirs(os.path.dirname(target), exist_ok=True)
+    tmp = target + ".tmp"
+    if os.path.exists(tmp):
+        os.remove(tmp)
+    try:
+        conn = sqlite3.connect(tmp)
+        conn.execute("PRAGMA foreign_keys = ON")
+        with open(args.schema, encoding="utf-8") as f:
+            conn.executescript(f.read())
+        check_schema(conn)
+        populate(conn, fake)
+
+        counts = [(t, conn.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0])
+                  for t in ["vehicle_category", "customer", "vehicle", "rental", "payment", "maintenance"]]
+        statuses = conn.execute(
+            "SELECT status, COUNT(*) FROM rental GROUP BY status ORDER BY status").fetchall()
+        conn.close()
+    except BaseException:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        if os.path.exists(tmp):
+            os.remove(tmp)
+        raise
+
+    replaced = os.path.exists(target)
+    os.replace(tmp, target)
+
+    print(f"{'Replaced' if replaced else 'Created'} {target} (seed={args.seed}, today={ts(NOW)})")
+    for table, n in counts:
         print(f"  {table:<17} {n:>5} rows")
-    print("  rental status:   " + ", ".join(
-        f"{s}={n}" for s, n in conn.execute(
-            "SELECT status, COUNT(*) FROM rental GROUP BY status ORDER BY status")))
-    conn.close()
+    print("  rental status:   " + ", ".join(f"{s}={n}" for s, n in statuses))
 
 
 if __name__ == "__main__":
