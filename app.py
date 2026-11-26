@@ -4,6 +4,7 @@ from pathlib import Path
 from flask import Flask, redirect, url_for
 
 import db
+from customer_routes import bp as customer_blueprint
 
 
 def create_app(test_config=None):
@@ -16,6 +17,7 @@ def create_app(test_config=None):
     if test_config is not None:
         app.config.update(test_config)
     db.init_app(app)
+    app.register_blueprint(customer_blueprint)
 
     @app.get("/")
     def index():

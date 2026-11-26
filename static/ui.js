@@ -1,15 +1,3 @@
-const tabs = document.querySelectorAll(".nav-item");
-tabs.forEach((tab) =>
-  tab.addEventListener("click", () => {
-    tabs.forEach((item) => {
-      item.classList.remove("active");
-      item.removeAttribute("aria-current");
-    });
-    tab.classList.add("active");
-    tab.setAttribute("aria-current", "page");
-  })
-);
-
 const root = document.documentElement;
 const toggleBtn = document.getElementById("theme-toggle");
 const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");

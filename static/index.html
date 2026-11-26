@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>RentalDesk</title>
   <script>
     (() => {
@@ -32,7 +33,44 @@
         <a class="nav-item" href="#payments">Payments</a>
       </nav>
     </aside>
-    <main class="main" aria-label="Selected section"></main>
+    <main class="main" aria-label="Selected section">
+      <section id="customers-section" class="customer-page" aria-labelledby="customers-heading" hidden>
+        <header class="page-heading"><div><h1 id="customers-heading">Customers</h1><p>Manage customer details and driver information.</p></div><button id="add-customer" type="button" class="primary">Add customer</button></header>
+        <p id="customer-message" role="status" aria-live="polite"></p>
+        <dialog id="customer-editor" aria-labelledby="editor-heading">
+          <h2 id="editor-heading">Add customer</h2>
+          <form id="customer-form" novalidate>
+            <div class="customer-fields">
+              <label>Full name<input name="full_name" placeholder="e.g. Jane Smith" autocomplete="name" required></label>
+              <label>Email<input name="email" placeholder="e.g. jane@example.com" type="email" autocomplete="email" required></label>
+              <label>Phone<input name="phone" placeholder="e.g. 555-0100" type="tel" autocomplete="tel" required></label>
+              <label>Driver-license number<input name="driver_license_no" placeholder="e.g. LA12345678" autocomplete="off" required></label>
+            </div>
+            <p id="customer-form-error" role="alert"></p>
+            <div class="form-actions"><button type="submit" class="primary">Save customer</button><button type="button" id="cancel-customer">Cancel</button></div>
+          </form>
+        </dialog>
+        <div class="customer-toolbar">
+          <div class="customer-search-fields">
+            <label><span id="customer-search-label">Search customers</span><input id="customer-search" type="search" placeholder="Name, email, phone, or license"></label>
+            <div id="customer-extra-filters" inert aria-hidden="true"><div class="filter-grid">
+              <label>Last Name<input id="filter-last-name" type="search" placeholder="Last name"></label>
+              <label>Email<input id="filter-email" type="search" placeholder="Email address"></label>
+              <label>Phone<input id="filter-phone" type="search" placeholder="Phone number"></label>
+              <label>License<input id="filter-license" type="search" placeholder="License number"></label>
+            </div></div>
+          </div>
+          <div class="search-actions"><button id="toggle-customer-filters" type="button" aria-expanded="false" aria-controls="customer-extra-filters">Expand filters</button><button id="customer-match-start" type="button" aria-pressed="false" title="Match the beginning of each field">Match from start</button><button id="clear-customer-filters" type="button">Clear</button><button id="refresh-customers" type="button">Refresh</button></div>
+        </div>
+        <p id="customer-list-status" role="status" aria-live="polite"></p>
+        <nav id="customer-pagination" class="customer-pagination" aria-label="Customer pages" hidden>
+          <button id="customer-prev-page" type="button">Previous</button>
+          <span id="customer-page-info" aria-live="polite"></span>
+          <button id="customer-next-page" type="button">Next</button>
+        </nav>
+        <div class="customer-table-wrap"><table id="customer-table" hidden><caption class="visually-hidden">Customer records</caption><thead><tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Phone</th><th scope="col">Driver license</th><th scope="col">Actions</th></tr></thead><tbody id="customer-rows"></tbody></table></div>
+      </section>
+    </main>
   </div>
 </body>
 </html>
