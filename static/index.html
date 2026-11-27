@@ -241,12 +241,22 @@
   <p id="reservation-message" role="status" aria-live="polite"></p>
 
   <div class="customer-toolbar">
-    <label>
-      Search reservations
-      <input id="reservation-search" type="search"
-             placeholder="Rental ID, customer, or registration">
-    </label>
-    <label>
+    <div class="customer-search-fields">
+      <label><span id="reservation-search-label">Search reservations</span>
+        <input id="reservation-search" type="search" placeholder="Rental ID, customer, vehicle, or registration">
+      </label>
+      <div id="reservation-extra-filters" inert aria-hidden="true"><div class="filter-grid">
+        <label>Customer<input id="reservation-filter-customer" type="search" placeholder="Customer name"></label>
+        <label>Vehicle<input id="reservation-filter-vehicle" type="search" placeholder="Year, make, or model"></label>
+        <label>Registration<input id="reservation-filter-registration" type="search" placeholder="Registration number"></label>
+      </div></div>
+    </div>
+    <div class="search-actions">
+      <button id="toggle-reservation-filters" type="button" aria-expanded="false" aria-controls="reservation-extra-filters">Expand filters</button>
+      <button id="reservation-match-start" type="button" aria-pressed="false" title="Match the beginning of each field">Match from start</button>
+      <button id="clear-reservation-filters" type="button">Clear</button>
+    </div>
+    <label class="reservation-status-filter">
       Status
       <select id="reservation-status">
         <option value="">All statuses</option>

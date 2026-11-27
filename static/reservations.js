@@ -8,6 +8,37 @@
   const search = find('reservation-search');
   const statusFilter = find('reservation-status');
 
+  const extraFilters = find('reservation-extra-filters');
+  const filterToggle = find('toggle-reservation-filters');
+  const matchStartToggle = find('reservation-match-start');
+  const filterNames = ['id', 'customer', 'vehicle', 'registration'];
+  const filterInputs = ['customer', 'vehicle', 'registration']
+    .map(name => find(`reservation-filter-${name}`));
+  let filtersExpanded = false;
+  let matchFromStart = false;
+
+  function readNamedFilters(text) {
+    if (!text.trim()) return ['', '', '', ''];
+    const values = ['', '', '', ''];
+    const pattern = /\s*(id|customer|vehicle|registration)\s*:\s*("(?:\\.|[^"\\])*")\s*(,|$)/giy;
+    let position = 0;
+    while (position < text.length) {
+      pattern.lastIndex = position;
+      const match = pattern.exec(text);
+      if (!match) return null;
+      try { values[filterNames.indexOf(match[1].toLowerCase())] = JSON.parse(match[2]); }
+      catch { return null; }
+      position = pattern.lastIndex;
+      if (match[3] === ',' && !text.slice(position).trim()) return null;
+    }
+    return values;
+  }
+
+  function matchesSearch(value, query) {
+    const text = String(value).toLowerCase();
+    return matchFromStart ? text.startsWith(query) : text.includes(query);
+  }
+
   let records = [];
   let customers = [];
   let vehicles = [];
@@ -118,17 +149,23 @@
 
   function render() {
     const query = search.value.trim().toLowerCase();
+    const activeFilters = filtersExpanded
+      ? [search.value, ...filterInputs.map(input => input.value)]
+      : readNamedFilters(search.value);
     const matches = records.filter(rental => {
-      const text = [
-        rental.rental_id,
-        rental.customer_name,
-        rental.registration_no,
-        rental.make,
-        rental.model,
-      ].join(' ').toLowerCase();
-
-      return text.includes(query)
-        && (!statusFilter.value || rental.status === statusFilter.value);
+      if (statusFilter.value && rental.status !== statusFilter.value) return false;
+      const vehicleParts = [String(rental.model_year), rental.make, rental.model];
+      const values = [String(rental.rental_id), rental.customer_name,
+        vehicleParts.join(' '), rental.registration_no];
+      if (activeFilters === null) {
+        return [...values, ...vehicleParts].some(value => matchesSearch(value, query));
+      }
+      return activeFilters.every((value, index) => {
+        const criterion = value.trim().toLowerCase();
+        if (!criterion) return true;
+        const candidates = index === 2 ? [values[index], ...vehicleParts] : [values[index]];
+        return candidates.some(candidate => matchesSearch(candidate, criterion));
+      });
     });
 
     pages = Math.max(1, Math.ceil(matches.length / pageSize));
@@ -373,9 +410,44 @@
     if (busy) event.preventDefault();
   });
 
-  search.addEventListener('input', () => {
+  function resetSearchPage() {
     page = 1;
     render();
+  }
+
+  search.addEventListener('input', resetSearchPage);
+  filterInputs.forEach(input => input.addEventListener('input', resetSearchPage));
+  filterToggle.addEventListener('click', () => {
+    if (filtersExpanded) {
+      search.value = [search.value, ...filterInputs.map(input => input.value)]
+        .map((value, index) => value.trim()
+          ? `${filterNames[index]}: ${JSON.stringify(value.trim())}` : '')
+        .filter(Boolean).join(', ');
+    } else {
+      const parsed = readNamedFilters(search.value);
+      // Preserve a plain, all-field search as a named customer criterion when expanding.
+      const values = parsed ?? ['', search.value, '', ''];
+      [search, ...filterInputs].forEach((input, index) => { input.value = values[index]; });
+    }
+    filtersExpanded = !filtersExpanded;
+    extraFilters.classList.toggle('expanded', filtersExpanded);
+    extraFilters.inert = !filtersExpanded;
+    extraFilters.setAttribute('aria-hidden', String(!filtersExpanded));
+    filterToggle.setAttribute('aria-expanded', String(filtersExpanded));
+    filterToggle.textContent = filtersExpanded ? 'Collapse filters' : 'Expand filters';
+    find('reservation-search-label').textContent = filtersExpanded ? 'Rental ID' : 'Search reservations';
+    search.placeholder = filtersExpanded ? 'Rental ID' : 'Rental ID, customer, vehicle, or registration';
+    resetSearchPage();
+  });
+  matchStartToggle.addEventListener('click', () => {
+    matchFromStart = !matchFromStart;
+    matchStartToggle.setAttribute('aria-pressed', String(matchFromStart));
+    resetSearchPage();
+  });
+  find('clear-reservation-filters').addEventListener('click', () => {
+    [search, ...filterInputs].forEach(input => { input.value = ''; });
+    resetSearchPage();
+    search.focus();
   });
 
   statusFilter.addEventListener('change', () => {
