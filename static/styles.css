@@ -326,3 +326,79 @@ body:has(#customer-editor[open]) {
 #customer-table tbody tr:hover { background: var(--bg-hover); }
 
 #customer-match-start[aria-pressed="true"] { background: var(--text-primary); color: var(--bg-sidebar); border-color: var(--text-primary); }
+.inventory-vehicle-heading {
+  margin-top: 36px;
+}
+
+.inventory-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 14px;
+}
+
+.inventory-table th,
+.inventory-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--table-border);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.inventory-table thead {
+  background: var(--bg-active);
+}
+
+.inventory-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.inventory-table tbody tr:hover {
+  background: var(--bg-hover);
+}
+
+.inventory-dialog {
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  padding: 28px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--bg-main);
+  color: var(--text-primary);
+  overflow-y: auto;
+}
+
+.inventory-dialog::backdrop {
+  background: rgb(0 0 0 / 50%);
+}
+
+.inventory-dialog .form-actions {
+  flex-wrap: wrap;
+}
+
+#inventory-section select {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid var(--text-nav);
+  border-radius: 6px;
+  background: var(--bg-sidebar);
+  color: var(--text-primary);
+  font: inherit;
+}
+
+#inventory-message:not(:empty),
+#category-form-error:not(:empty),
+#vehicle-form-error:not(:empty),
+#availability-result:not(:empty) {
+  padding: 12px;
+  border: 1px solid var(--text-nav);
+  border-radius: 6px;
+  overflow-wrap: anywhere;
+}
+
+#category-form-error:not(:empty),
+#vehicle-form-error:not(:empty) {
+  color: var(--error-text);
+  background: var(--error-bg);
+}
