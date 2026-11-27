@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="./styles.css">
   <script src="./ui.js" defer></script>
   <script src="./app.js" defer></script>
+  <script src="./inventory.js" defer></script>
 </head>
 <body>
   <div class="desk">
@@ -70,6 +71,156 @@
         </nav>
         <div class="customer-table-wrap"><table id="customer-table" hidden><caption class="visually-hidden">Customer records</caption><thead><tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Phone</th><th scope="col">Driver license</th><th scope="col">Actions</th></tr></thead><tbody id="customer-rows"></tbody></table></div>
       </section>
+      <section id="inventory-section" class="customer-page" hidden
+         aria-labelledby="inventory-heading">
+  <header class="page-heading">
+    <div>
+      <h1 id="inventory-heading">Inventory</h1>
+      <p>Manage vehicle categories, rates, and vehicles.</p>
+    </div>
+    <button id="refresh-inventory" type="button">Refresh</button>
+  </header>
+
+  <p id="inventory-message" role="status" aria-live="polite"></p>
+
+  <div class="page-heading">
+    <h2>Categories</h2>
+    <button id="add-category" type="button" class="primary">
+      Add category
+    </button>
+  </div>
+
+  <div class="customer-table-wrap">
+    <table class="inventory-table">
+      <caption class="visually-hidden">Vehicle categories</caption>
+      <thead>
+        <tr>
+          <th scope="col">Category</th>
+          <th scope="col">Daily rate</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="category-rows"></tbody>
+    </table>
+  </div>
+
+  <div class="page-heading inventory-vehicle-heading">
+    <h2>Vehicles</h2>
+    <button id="add-vehicle" type="button" class="primary">
+      Add vehicle
+    </button>
+  </div>
+
+  <div class="customer-table-wrap">
+    <table class="inventory-table">
+      <caption class="visually-hidden">Vehicle records</caption>
+      <thead>
+        <tr>
+          <th scope="col">Vehicle</th>
+          <th scope="col">Category</th>
+          <th scope="col">VIN</th>
+          <th scope="col">Registration</th>
+          <th scope="col">Odometer (km)</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="vehicle-rows"></tbody>
+    </table>
+  </div>
+
+  <dialog id="category-editor" class="inventory-dialog"
+          aria-labelledby="category-editor-heading">
+    <h2 id="category-editor-heading">Add category</h2>
+    <form id="category-form">
+      <div class="customer-fields">
+        <label>
+          Category name
+          <input name="category_name" required>
+        </label>
+        <label>
+          Daily rate ($)
+          <input name="daily_rate" type="text" inputmode="decimal"
+                 placeholder="45.00" required>
+        </label>
+      </div>
+      <p id="category-form-error" role="alert"></p>
+      <div class="form-actions">
+        <button type="submit" class="primary">Save category</button>
+        <button type="button" id="cancel-category">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="vehicle-editor" class="inventory-dialog"
+          aria-labelledby="vehicle-editor-heading">
+    <h2 id="vehicle-editor-heading">Add vehicle</h2>
+    <form id="vehicle-form">
+      <div class="customer-fields">
+        <label>
+          Category
+          <select name="category_id" required></select>
+        </label>
+        <label>
+          VIN
+          <input name="vin" required>
+        </label>
+        <label>
+          Registration number
+          <input name="registration_no" required>
+        </label>
+        <label>
+          Make
+          <input name="make" required>
+        </label>
+        <label>
+          Model
+          <input name="model" required>
+        </label>
+        <label>
+          Model year
+          <input name="model_year" type="number"
+                 min="1980" max="2100" step="1" required>
+        </label>
+        <label>
+          Odometer (km)
+          <input name="odometer_km" type="number"
+                 min="0" step="1" required>
+        </label>
+      </div>
+      <p id="vehicle-form-error" role="alert"></p>
+      <div class="form-actions">
+        <button type="submit" class="primary">Save vehicle</button>
+        <button type="button" id="cancel-vehicle">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="availability-editor" class="inventory-dialog"
+          aria-labelledby="availability-heading">
+    <h2 id="availability-heading">Check availability</h2>
+    <p>Enter pickup and due times in UTC.</p>
+    <form id="availability-form">
+      <div class="customer-fields">
+        <label>
+          Pickup time (UTC)
+          <input name="pickup_at" type="datetime-local"
+                 step="1" required>
+        </label>
+        <label>
+          Due time (UTC)
+          <input name="due_at" type="datetime-local"
+                 step="1" required>
+        </label>
+      </div>
+      <p id="availability-result" role="status"
+         aria-live="polite"></p>
+      <div class="form-actions">
+        <button type="submit" class="primary">Check</button>
+        <button type="button" id="close-availability">Close</button>
+      </div>
+    </form>
+  </dialog>
+</section>
     </main>
   </div>
 </body>
