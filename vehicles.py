@@ -18,7 +18,8 @@ TEXT_LABELS = {
     "model": "Model",
 }
 
-MAX_INTEGER = 9223372036854775807
+# Keep JSON numbers exact when consumed by JavaScript.
+MAX_SAFE_INTEGER = 9007199254740991
 
 
 class VehicleValidationError(ValueError):
@@ -80,9 +81,9 @@ def _validate(data):
         values[field] = value.strip()
 
     limits = {
-        "category_id": (1, MAX_INTEGER, "Category ID"),
+        "category_id": (1, MAX_SAFE_INTEGER, "Category ID"),
         "model_year": (1980, 2100, "Model year"),
-        "odometer_km": (0, MAX_INTEGER, "Odometer"),
+        "odometer_km": (0, MAX_SAFE_INTEGER, "Odometer"),
     }
 
     for field, (minimum, maximum, label) in limits.items():
@@ -241,7 +242,7 @@ def get_vehicle_availability(
     if exclude_rental_id is not None:
         if (
             type(exclude_rental_id) is not int
-            or not 1 <= exclude_rental_id <= MAX_INTEGER
+            or not 1 <= exclude_rental_id <= MAX_SAFE_INTEGER
         ):
             raise VehicleValidationError(
                 "Excluded rental ID must be a positive integer."

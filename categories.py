@@ -1,6 +1,10 @@
 from db import get_db, transaction
 
 
+# Keep JSON numbers exact when consumed by JavaScript.
+MAX_SAFE_INTEGER = 9007199254740991
+
+
 class CategoryValidationError(ValueError):
     pass
 
@@ -53,10 +57,10 @@ def _validate(data):
             "Category name contains an invalid character."
         )
 
-    if type(rate) is not int or not 0 < rate <= 9223372036854775807:
+    if type(rate) is not int or not 0 < rate <= MAX_SAFE_INTEGER:
         raise CategoryValidationError(
             "Daily rate must be a positive integer in cents "
-            "within SQLite's integer range."
+            "within JavaScript's safe integer range."
         )
 
     return {
