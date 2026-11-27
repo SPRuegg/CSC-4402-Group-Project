@@ -402,3 +402,31 @@ body:has(#customer-editor[open]) {
   color: var(--error-text);
   background: var(--error-bg);
 }
+#reservations-section select {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid var(--text-nav);
+  border-radius: 6px;
+  background: var(--bg-sidebar);
+  color: var(--text-primary);
+  font: inherit;
+}
+
+#reservation-message:not(:empty),
+#reservation-form-error:not(:empty) {
+  padding: 12px;
+  border: 1px solid var(--text-nav);
+  border-radius: 6px;
+  overflow-wrap: anywhere;
+}
+
+#reservation-form-error:not(:empty) {
+  color: var(--error-text);
+  background: var(--error-bg);
+}
+
+#reservation-list-status {
+  margin-block: 20px;
+  font-size: 14px;
+}

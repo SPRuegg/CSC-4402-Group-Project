@@ -15,6 +15,7 @@
   <script src="./ui.js" defer></script>
   <script src="./app.js" defer></script>
   <script src="./inventory.js" defer></script>
+  <script src="./reservations.js" defer></script>
 </head>
 <body>
   <div class="desk">
@@ -32,6 +33,7 @@
         <a class="nav-item" href="#inventory">Inventory</a>
         <a class="nav-item" href="#maintenance">Maintenance</a>
         <a class="nav-item" href="#payments">Payments</a>
+        <a class="nav-item" href="#reservations">Reservations</a>
       </nav>
     </aside>
     <main class="main" aria-label="Selected section">
@@ -217,6 +219,117 @@
       <div class="form-actions">
         <button type="submit" class="primary">Check</button>
         <button type="button" id="close-availability">Close</button>
+      </div>
+    </form>
+  </dialog>
+</section>
+      <section id="reservations-section" class="customer-page" hidden
+         aria-labelledby="reservations-heading">
+  <header class="page-heading">
+    <div>
+      <h1 id="reservations-heading">Reservations</h1>
+      <p>Reserve vehicles, manage bookings, and record pickup.</p>
+    </div>
+    <div class="form-actions">
+      <button id="refresh-reservations" type="button">Refresh</button>
+      <button id="add-reservation" type="button" class="primary">
+        New reservation
+      </button>
+    </div>
+  </header>
+
+  <p id="reservation-message" role="status" aria-live="polite"></p>
+
+  <div class="customer-toolbar">
+    <label>
+      Search reservations
+      <input id="reservation-search" type="search"
+             placeholder="Rental ID, customer, or registration">
+    </label>
+    <label>
+      Status
+      <select id="reservation-status">
+        <option value="">All statuses</option>
+        <option value="reserved">Reserved</option>
+        <option value="active">Active</option>
+        <option value="completed">Completed</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+    </label>
+  </div>
+
+  <p id="reservation-list-status" role="status" aria-live="polite"></p>
+
+  <nav id="reservation-pagination" class="customer-pagination"
+       aria-label="Reservation pages" hidden>
+    <button id="reservation-prev-page" type="button">Previous</button>
+    <span id="reservation-page-info"></span>
+    <button id="reservation-next-page" type="button">Next</button>
+  </nav>
+
+  <div class="customer-table-wrap">
+    <table class="inventory-table">
+      <caption class="visually-hidden">Rental reservations</caption>
+      <thead>
+        <tr>
+          <th scope="col">ID</th>
+          <th scope="col">Customer</th>
+          <th scope="col">Vehicle</th>
+          <th scope="col">Pickup (UTC)</th>
+          <th scope="col">Due (UTC)</th>
+          <th scope="col">Agreed daily rate</th>
+          <th scope="col">Status</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="reservation-rows"></tbody>
+    </table>
+  </div>
+
+  <dialog id="reservation-editor" class="inventory-dialog"
+          aria-labelledby="reservation-editor-heading">
+    <h2 id="reservation-editor-heading">New reservation</h2>
+
+    <form id="reservation-form">
+      <div class="customer-fields">
+        <label>
+          Customer
+          <select name="customer_id" required></select>
+        </label>
+
+        <label>
+          Vehicle
+          <select name="vehicle_id" required></select>
+        </label>
+
+        <label>
+          Pickup time (UTC)
+          <input name="pickup_at" type="datetime-local"
+                 step="1" required>
+        </label>
+
+        <label>
+          Due time (UTC)
+          <input name="due_at" type="datetime-local"
+                 step="1" required>
+        </label>
+
+        <label id="reservation-rate-field" hidden>
+          Agreed daily rate ($)
+          <input name="agreed_rate" type="text"
+                 inputmode="decimal" placeholder="45.00">
+        </label>
+      </div>
+
+      <p id="reservation-rate-note"></p>
+      <p>Enter all times in UTC. Availability is checked when saving.</p>
+      <p id="reservation-form-error" role="alert"></p>
+
+      <div class="form-actions">
+        <button type="submit" class="primary">Save reservation</button>
+        <button type="button" id="cancel-reservation-editor">
+          Close
+        </button>
       </div>
     </form>
   </dialog>
