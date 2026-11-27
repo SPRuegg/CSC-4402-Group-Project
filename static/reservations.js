@@ -151,20 +151,22 @@
       addCell(row, rental.pickup_at);
       addCell(row, rental.due_at);
       addCell(row, `$${rateText(rental.agreed_daily_rate_cents)}`);
-      addCell(row, rental.status);
+      addCell(row, rental.status.charAt(0).toUpperCase() + rental.status.slice(1));
 
       const actions = addCell(row, '');
-      actions.className = 'row-actions';
 
       if (rental.status === 'reserved') {
-        addButton(actions, 'Edit', () => openEditor(rental.rental_id));
-        addButton(actions, 'Pick up', () => {
+        const buttons = document.createElement('div');
+        buttons.className = 'reservation-actions';
+        actions.append(buttons);
+        addButton(buttons, 'Edit', () => openEditor(rental.rental_id));
+        addButton(buttons, 'Pick up', () => {
           changeRental(rental, 'pickup', 'Record pickup for');
         });
-        addButton(actions, 'Cancel', () => {
+        addButton(buttons, 'Cancel', () => {
           changeRental(rental, 'cancel', 'Cancel');
         });
-        addButton(actions, 'Delete', () => {
+        addButton(buttons, 'Delete', () => {
           changeRental(rental, 'delete', 'Delete');
         });
       } else {

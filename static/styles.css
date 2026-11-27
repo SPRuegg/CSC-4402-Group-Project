@@ -430,3 +430,20 @@ body:has(#customer-editor[open]) {
   margin-block: 20px;
   font-size: 14px;
 }
+/* Compact reservation actions leave room for identifiers and status. */
+#reservations-section .reservation-actions {
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
+  gap: 6px;
+}
+
+#reservations-section .reservation-actions button {
+  margin: 0;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+
+#reservations-section .inventory-table :is(th, td):is(:first-child, :nth-child(7)) {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
