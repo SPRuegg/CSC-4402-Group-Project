@@ -9,6 +9,7 @@ Reads and Executes "test_queries.sql" in sql folder
 USAGE: 
     Read and perform steps in README.md
      Note: It is recommended to use a seed when generating the file to get matching results with example file.
+     --seed 7
     python execute_test_queries.py
 
 
@@ -26,7 +27,7 @@ This is set to only work with test_queries.sql in this stage.
 RECOMMENDATIONS:
     Output the contents this file produces into another file for redability purposes, 
     as ALL sql queries are executed at once.
-    Example: python .\CSC-4402-Group-Project\execute_test_queries.py --db ./instance/practice.sqlite3 > something.txt
+    Example: python ./CSC-4402-Group-Project/execute_test_queries.py --db ./instance/practice.sqlite3 > something.txt
 """
 
 
