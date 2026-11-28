@@ -3,6 +3,34 @@ import sqlite3
 from pathlib import Path
 import argparse
 
+"""
+Reads and Executes "test_queries.sql" in sql folder
+
+USAGE: 
+    Read and perform steps in README.md
+     Note: It is recommended to use a seed when generating the file to get matching results with example file.
+    python execute_test_queries.py
+
+
+OPTIONAL PARAMETERS:
+    --db : ./instance/FILE_NAME with FILE_NAME replaced with the database file, will use that as the instance. DEFAULT=instance/car_rental.sqlite3
+    --reference_time : Reference time for overdue cars and payments. DEFAULT=2026-12-01 08:00:00
+    --pickup_date : Request for a rental pickup date. DEFAULT=2026-12-01 08:00:00
+    --dropoff_date : Requested rental dropoff date. DEFAULT=2026-12-05 17:00:00
+
+    
+This file only queries, it will not modify existing database files.
+This is set to only work with test_queries.sql in this stage.
+
+
+RECOMMENDATIONS:
+    Output the contents this file produces into another file for redability purposes, 
+    as ALL sql queries are executed at once.
+    Example: python .\CSC-4402-Group-Project\execute_test_queries.py --db ./instance/practice.sqlite3 > something.txt
+"""
+
+
+
 #Arguments for program (optional)
 parser = argparse.ArgumentParser(description="Execute the SQL test queries against a car rental database.")
 parser.add_argument("--db", default="instance/car_rental.sqlite3", help="Database file path (default: instance/car_rental.sqlite3)")
