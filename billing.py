@@ -202,7 +202,10 @@ def _validate_payment(data):
 def _check_payment_time(rental, paid_at):
     paid = _timestamp(paid_at, "Payment time")
     pickup = _timestamp(rental["pickup_at"], "Pickup time")
-
+    if paid > _utc_now():
+        raise BillingValidationError(
+            "Payment time cannot be in the future."
+        )
     if paid < pickup:
         raise BillingValidationError(
             "Payment time cannot be before pickup."

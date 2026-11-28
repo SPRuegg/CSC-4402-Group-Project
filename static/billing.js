@@ -326,7 +326,12 @@
       : statement.balance_cents > 0
         ? decimal(statement.balance_cents)
         : '';
+    paymentField('paid_at').min =
+      statement.rental.pickup_at.replace(' ', 'T');
 
+    paymentField('paid_at').max = statement.rental.returned_at
+      ? statement.rental.returned_at.replace(' ', 'T')
+      : '';
     paymentField('paid_at').value = payment
       ? payment.paid_at.replace(' ', 'T')
       : statement.rental.returned_at
