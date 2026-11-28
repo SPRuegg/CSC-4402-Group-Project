@@ -449,3 +449,61 @@ body:has(#customer-editor[open]) {
 }
 
 #reservations-section .reservation-status-filter { flex: 0 1 180px; }
+
+#billing-section select {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid var(--text-nav);
+  border-radius: 6px;
+  background: var(--bg-sidebar);
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.billing-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-block: 24px;
+}
+
+.billing-summary > div {
+  padding: 16px;
+  border: 1px solid var(--table-border);
+  border-radius: 8px;
+  background: var(--bg-sidebar);
+}
+
+.billing-summary dt {
+  font-size: 13px;
+}
+
+.billing-summary dd {
+  margin: 8px 0 0;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.billing-return {
+  margin-top: 32px;
+}
+
+#return-form > label {
+  max-width: 360px;
+}
+
+#billing-message:not(:empty),
+#billing-warnings:not(:empty),
+#payment-form-error:not(:empty),
+#return-preview-result:not(:empty) {
+  padding: 12px;
+  border: 1px solid var(--text-nav);
+  border-radius: 6px;
+  overflow-wrap: anywhere;
+}
+
+#payment-form-error:not(:empty) {
+  color: var(--error-text);
+  background: var(--error-bg);
+}
