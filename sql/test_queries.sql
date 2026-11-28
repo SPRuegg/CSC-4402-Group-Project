@@ -7,7 +7,7 @@ SELECT * FROM rental
 --Show overdue rentals
 SELECT * FROM rental
  WHERE rental.status = 'active' AND
-       rental.due_at < :OVERDUE-RENTAL;
+       rental.due_at < :REFERENCE_TIME;
 
 -- Calculate charge of rental
 WITH rental_totals AS (
@@ -21,7 +21,7 @@ WITH rental_totals AS (
             JULIANDAY(
              DATE(
               COALESCE(
-               rental.returned_at, :CHARGE-DATE
+               rental.returned_at, :REFERENCE_TIME
                )
             )
         )
@@ -61,14 +61,14 @@ LEFT JOIN rental
     ON rental.vehicle_id = vehicle.vehicle_id
     AND rental.status <> 'cancelled'
     AND JULIANDAY(rental.pickup_at) <
-        JULIANDAY(:END_DATE)
+        JULIANDAY(:DROPOFF_DATE)
     AND JULIANDAY(
         CASE
             WHEN rental.status = 'completed'
                 THEN rental.returned_at
             ELSE rental.due_at
         END
-    ) > JULIANDAY(:START_DATE)
+    ) > JULIANDAY(:PICKUP_DATE)
  
 -- Find unfinished maintenance
 
@@ -76,9 +76,9 @@ LEFT JOIN maintenance
     ON maintenance.vehicle_id = vehicle.vehicle_id
     AND maintenance.completed_at IS NULL
     or ( JULIANDAY(maintenance.started_at) <
-        JULIANDAY(:END_DATE)
+        JULIANDAY(:DROPOFF_DATE)
     AND JULIANDAY(maintenance.completed_at
-    ) > JULIANDAY(:START_DATE))
+    ) > JULIANDAY(:PICKUP_DATE))
  
 WHERE
    rental.rental_id IS NULL
