@@ -453,6 +453,52 @@ class BillingTests(unittest.TestCase):
         self.assertEqual(statement["charge_cents"], 0)
         self.assertEqual(statement["balance_cents"], 0)
 
+    def test_future_payment_create_and_edit_preserve_history(self):
+        payment = self.pay(1000)
+        original = self.statement()
+        data = {
+            "amount_cents": 2000,
+            "paid_at": "2030-01-10 12:00:01",
+            "method": "card",
+        }
+
+        responses = [
+            self.client.post("/api/rentals/1/payments", json=data),
+            self.client.put(
+                f"/api/rentals/1/payments/{payment['payment_id']}",
+                json=data,
+            ),
+        ]
+
+        for response in responses:
+            self.assertEqual(response.status_code, 400)
+
+        self.assertEqual(self.statement(), original)
+
+        # The mocked clock is exactly this UTC time.
+        self.pay(1000, "2030-01-10 12:00:00")
+
+    def test_pending_late_return_blocks_overlap_but_allows_boundary(self):
+        self.record_return("2030-01-04 10:00:00")
+        self.assertEqual(self.statement()["rental"]["status"], "active")
+
+        details = {
+            "customer_id": 1,
+            "vehicle_id": 1,
+            "pickup_at": "2030-01-03 12:00:00",
+            "due_at": "2030-01-05 10:00:00",
+        }
+
+        response = self.client.post("/api/rentals", json=details)
+        self.assertEqual(response.status_code, 400)
+
+        details["pickup_at"] = "2030-01-04 10:00:00"
+        response = self.client.post("/api/rentals", json=details)
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(
+            response.get_json()["rental"]["status"], "reserved"
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

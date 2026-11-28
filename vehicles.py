@@ -262,6 +262,8 @@ def get_vehicle_availability(
           AND (
               CASE
                   WHEN status = 'completed' THEN returned_at
+                  WHEN status = 'active' AND returned_at > due_at
+                      THEN returned_at
                   ELSE due_at
               END
           ) > ?
